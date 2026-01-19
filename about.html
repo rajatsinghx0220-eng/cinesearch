@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineReserve | Premium Booking</title>
+  <style>
+    :root {
+      --primary: #e50914; /* Cinema Red */
+      --bg: #080808;
+      --card-bg: #141414;
+      --text: #ffffff;
+      --text-dim: #9ca3af;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    body { 
+      background-color: var(--bg); 
+      color: var(--text); 
+      overflow-x: hidden;
+      background: linear-gradient(to bottom, #1a1a1a 0%, #080808 100%);
+      min-height: 100vh;
+    }
+
+    /* Navbar Style */
+    nav {
+      padding: 20px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.9);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo { font-size: 24px; font-weight: 900; color: white; text-decoration: none; letter-spacing: 2px; }
+    .logo span { color: var(--primary); }
+
+    .container { 
+      max-width: 800px; 
+      margin: 40px auto; 
+      background: var(--card-bg); 
+      padding: 40px; 
+      border-radius: 20px; 
+      border: 1px solid rgba(255,255,255,0.05);
+      animation: slideUp 0.8s ease forwards;
+    }
+
+    /* Screen Animation */
+    .screen { 
+      width: 100%; 
+      height: 10px; 
+      background: #fff; 
+      margin: 20px 0 50px 0; 
+      border-radius: 50%;
+      box-shadow: 0 3px 20px rgba(255, 255, 255, 0.7);
+    }
+
+    .seats { 
+      display: grid; 
+      grid-template-columns: repeat(8, 1fr); 
+      gap: 12px; 
+      perspective: 1000px;
+    }
+
+    .seat { 
+      height: 35px; 
+      background: #333; 
+      border-radius: 6px 6px 15px 15px; 
+      cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #888;
+    }
+
+    .seat:hover:not(.reserved) { 
+      background: #444; 
+      transform: scale(1.2) translateY(-5px);
+      box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3);
+    }
+
+    .seat.selected { 
+      background: var(--primary) !important; 
+      color: white; 
+      transform: scale(1.1);
+      box-shadow: 0 0 15px var(--primary);
+    }
+
+    .seat.reserved { 
+      background: #1a1a1a; 
+      color: #444; 
+      cursor: not-allowed; 
+      opacity: 0.3;
+    }
+
+    .seat.male { border-top: 3px solid #2563eb; }
+    .seat.female { border-top: 3px solid #db2777; }
+
+    /* Forms & Inputs */
+    h2 { margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    label { font-size: 14px; color: var(--text-dim); margin-top: 15px; display: block; }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background: #000;
+      border: 1px solid #333;
+      color: white;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 15px;
+      width: 100%;
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover { background: #b20710; transform: translateY(-2px); box-shadow: 0 5px 20px rgba(229, 9, 20, 0.4); }
+
+    .hidden { display: none; }
+
+    /* Animations */
+    @keyframes slideUp { 
+      from { opacity: 0; transform: translateY(40px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+
+    .stagger-seat { animation: popIn 0.5s ease backwards; }
+    @keyframes popIn { 
+      0% { opacity: 0; transform: scale(0.5); } 
+      100% { opacity: 1; transform: scale(1); } 
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="#" class="logo">CINE<span>RESERVE</span></a>
+  </nav>
+
+  <div class="container" id="seatPage">
+    <h2>Select Your Experience</h2>
+    
+    <label>Viewer Gender (Sets border color)</label>
+    <select id="genderSelect">
+      <option value="male">Male (Blue)</option>
+      <option value="female">Female (Pink)</option>
+    </select>
+
+    <div class="screen"></div>
+    <div style="text-align: center; color: #444; font-size: 12px; margin-top: -40px; margin-bottom: 30px;">SCREEN</div>
+
+    <div class="seats" id="seats"></div>
+    
+    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+      <p id="selectedCount" style="color: var(--text-dim);">Selected: 0 Seats</p>
+      <p id="totalPrice" style="font-weight: bold; font-size: 20px;">₹0</p>
+    </div>
+
+    <button onclick="goToPayment()">Continue to Payment</button>
+  </div>
+
+  <div class="container hidden" id="paymentPage">
+    <h2>Secure Checkout</h2>
+    <div id="summary" style="padding: 20px; background: #000; border-radius: 10px; margin-bottom: 20px;"></div>
+
+    <label>Payment Method</label>
+    <select id="payMethod">
+      <option value="upi">UPI (PhonePe / GPay)</option>
+      <option value="card">Credit / Debit Card</option>
+    </select>
+
+    <label>Transaction ID / Reference</label>
+    <input type="text" id="txn" placeholder="Paste Transaction ID here">
+
+    <button onclick="confirmReservation()">Pay & Confirm</button>
+  </div>
+
+  <div class="container hidden" id="confirmPage" style="text-align: center;">
+    <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+    <h2>Booking Confirmed!</h2>
+    <p id="finalDetails" style="color: var(--text-dim); margin-bottom: 20px;"></p>
+    <button onclick="location.reload()">Book More Seats</button>
+  </div>
+
+  <script>
+    const seatsDiv = document.getElementById('seats');
+    const selectedCountText = document.getElementById('selectedCount');
+    const totalPriceText = document.getElementById('totalPrice');
+    let reservedSeats = JSON.parse(localStorage.getItem('reservedSeats')) || {};
+    let selectedSeats = [];
+
+    function loadSeats() {
+      seatsDiv.innerHTML = '';
+      for(let i=1; i<=32; i++){
+        const seatId = 'S'+i;
+        const seat = document.createElement('div');
+        seat.className = 'seat stagger-seat';
+        seat.style.animationDelay = `${i * 0.02}s`;
+        seat.innerText = i;
+        
+        if(reservedSeats[seatId]) seat.classList.add('reserved');
+        
+        seat.onclick = () => selectSeat(seat, seatId);
+        seatsDiv.appendChild(seat);
+      }
+    }
+
+    function selectSeat(seat, id){
+      if(seat.classList.contains('reserved')) return;
+      const gender = document.getElementById('genderSelect').value;
+      const index = selectedSeats.findIndex(s => s.id === id);
+
+      if(index > -1){
+        seat.classList.remove('selected', 'male', 'female');
+        selectedSeats.splice(index, 1);
+      } else {
+        seat.classList.add('selected', gender);
+        selectedSeats.push({id, gender});
+      }
+      
+      const price = selectedSeats.length * 50;
+      selectedCountText.innerText = `Selected: ${selectedSeats.length} Seats`;
+      totalPriceText.innerText = `₹${price}`;
+    }
+
+    function goToPayment(){
+      if(selectedSeats.length === 0) return alert('Select seats first!');
+      document.getElementById('seatPage').classList.add('hidden');
+      document.getElementById('paymentPage').classList.remove('hidden');
+      
+      const total = selectedSeats.length * 50;
+      document.getElementById('summary').innerHTML = `
+        <p>Seats: ${selectedSeats.map(s => s.id).join(', ')}</p>
+        <p style="color: var(--primary); font-size: 24px; font-weight: bold; margin-top: 10px;">Total: ₹${total}</p>
+      `;
+    }
+
+    function confirmReservation(){
+      const txn = document.getElementById('txn').value;
+      if(!txn) return alert('Enter Txn ID');
+      
+      selectedSeats.forEach(s => {
+        reservedSeats[s.id] = {gender: s.gender, reservedAt: new Date().getTime()};
+      });
+      
+      localStorage.setItem('reservedSeats', JSON.stringify(reservedSeats));
+      document.getElementById('paymentPage').classList.add('hidden');
+      document.getElementById('confirmPage').classList.remove('hidden');
+      document.getElementById('finalDetails').innerText = `Your seats (${selectedSeats.map(s=>s.id).join(', ')}) are reserved. Enjoy the movie!`;
+    }
+
+    loadSeats();
+  </script>
+</body>
+</html>
